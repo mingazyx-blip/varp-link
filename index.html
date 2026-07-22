@@ -62,17 +62,23 @@
 
         #searchBox { flex: 1.5; min-width: 150px; background: rgba(255, 255, 255, 0.5); border: 1px dashed rgba(0,0,0,0.2); }
 
+        /* Bars Style (Platform & Tags) */
+        .filter-section {
+            width: 100%; max-width: 1100px; display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px;
+        }
+        .bar-label { font-size: 11px; color: #94a3b8; margin-left: 5px; font-weight: 600; }
         .tag-bar {
-            width: 100%; max-width: 1100px; display: flex; gap: 8px; overflow-x: auto;
-            padding: 10px 0; margin-bottom: 10px; scrollbar-width: none;
+            width: 100%; display: flex; gap: 8px; overflow-x: auto;
+            padding: 4px 0; scrollbar-width: none;
         }
         .tag-bar::-webkit-scrollbar { display: none; }
         .tag-filter {
             padding: 5px 15px; background: rgba(255,255,255,0.1); color: #fff;
             border-radius: 20px; font-size: 12px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2);
-            white-space: nowrap; transition: 0.2s;
+            white-space: nowrap; transition: 0.2s; display: flex; align-items: center; gap: 5px;
         }
         .tag-filter.active { background: var(--accent); border-color: var(--accent); font-weight: 600; }
+        .platform-filter.active { background: #8b5cf6; border-color: #8b5cf6; font-weight: 600; }
 
         #list { 
             display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -98,9 +104,12 @@
 
         .link-item:hover { transform: translateY(-5px) scale(1.01); box-shadow: 0 15px 30px rgba(0,0,0,0.2); background: #fff; }
         .link-item b { font-size: 16px; color: var(--primary); display: block; }
-        .tag-label { font-size: 9px; padding: 2px 6px; background: #e0f2fe; color: #0369a1; border-radius: 5px; font-weight: 600; margin-top: 4px; display: inline-block; }
+        
+        .badges-wrap { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+        .tag-label { font-size: 9px; padding: 2px 6px; background: #e0f2fe; color: #0369a1; border-radius: 5px; font-weight: 600; }
+        .platform-label { font-size: 9px; padding: 2px 6px; background: #f3e8ff; color: #6b21a8; border-radius: 5px; font-weight: 600; }
 
-        /* Avatar Container & Fallback Avatar (Initial Box) */
+        /* Avatar Container & Fallback */
         .avatar-wrap { position: relative; flex-shrink: 0; width: 48px; height: 48px; }
         .avatar-img {
             width: 48px; height: 48px; border-radius: 12px; object-fit: cover;
@@ -167,7 +176,14 @@
     <input type="text" id="searchBox" placeholder="🔍 ค้นหาเร็ว...">
 </div>
 
-<div class="tag-bar" id="tagBar"></div>
+<div class="filter-section">
+    <div class="bar-label">📱 แยกตามแอป (Platform):</div>
+    <div class="tag-bar" id="platformBar"></div>
+    
+    <div class="bar-label" style="margin-top: 4px;">🏷️ แยกตามหมวดหมู่ (Tag):</div>
+    <div class="tag-bar" id="tagBar"></div>
+</div>
+
 <div id="list"></div>
 
 <script type="module">
@@ -188,6 +204,17 @@
     let allLinks = [];
     let searchTerm = "";
     let activeTag = "ทั้งหมด";
+    let activePlatform = "ทั้งหมด";
+
+    const PLATFORM_ICONS = {
+        'tiktok': '🎵 TikTok',
+        'instagram': '📸 Instagram',
+        'twitter': '🐦 X (Twitter)',
+        'facebook': '📘 Facebook',
+        'youtube': '▶️ YouTube',
+        'github': '💻 GitHub',
+        'other': '🌐 เว็บทั่วไป'
+    };
 
     const showToast = (msg) => {
         const t = document.getElementById('toast');
@@ -196,7 +223,22 @@
         setTimeout(() => t.classList.remove('show'), 2000);
     };
 
-    // ---------- Social profile picture detection ----------
+    // ---------- Platform & Social profile detection ----------
+    function detectPlatform(rawUrl) {
+        let u;
+        try { u = new URL(rawUrl); } catch (e) { return 'other'; }
+        const host = u.hostname.replace(/^www\./i, '').toLowerCase();
+
+        if (host.includes('tiktok.com')) return 'tiktok';
+        if (host.includes('instagram.com')) return 'instagram';
+        if (host.includes('twitter.com') || host.includes('x.com')) return 'twitter';
+        if (host.includes('facebook.com') || host.includes('fb.com')) return 'facebook';
+        if (host.includes('youtube.com') || host.includes('youtu.be')) return 'youtube';
+        if (host.includes('github.com')) return 'github';
+        
+        return 'other';
+    }
+
     function detectSocialProfile(rawUrl) {
         let u;
         try { u = new URL(rawUrl); } catch (e) { return null; }
@@ -237,28 +279,19 @@
         return null;
     }
 
-    // สร้างลำดับ URL รูปที่จะลองดึง
     function getAvatarChain(url, customImg) {
         const chain = [];
-        
-        // 1. ลิงก์รูปภาพที่ผู้ใช้ใส่เอง (ถ้ามี)
         if (customImg && customImg.trim() !== "") {
             chain.push({ src: customImg.trim(), isProfile: true });
         }
-
-        // 2. ดึงจาก Social Profile (unavatar)
         const social = detectSocialProfile(url);
         if (social) {
             chain.push({ src: `https://unavatar.io/${social.platform}/${social.username}`, isProfile: true });
         }
-
-        // 3. ดึงจาก Google Favicon Service
         try {
             const host = new URL(url).hostname;
             chain.push({ src: `https://www.google.com/s2/favicons?domain=${host}&sz=128`, isProfile: false });
         } catch (e) { /* ignore */ }
-
-        // 4. ดึงจาก DuckDuckGo Favicon Service (สำรองเพิ่มเติม)
         try {
             const host = new URL(url).hostname;
             chain.push({ src: `https://icons.duckduckgo.com/ip3/${host}.ico`, isProfile: false });
@@ -267,14 +300,12 @@
         return chain;
     }
 
-    // โหลดรูปภาพ หรือแสดง Fallback ตัวอักษร
     function renderAvatar(containerEl, badgeEl, chain, name) {
         containerEl.innerHTML = "";
         let step = 0;
 
         const tryNext = () => {
             if (step >= chain.length) {
-                // หากดึงรูปไม่ขึ้นเลย ให้สร้างกล่องตัวอักษรตัวแรกของชื่อรายการแทน
                 const initial = (name || 'V').trim().charAt(0);
                 const initialEl = document.createElement('div');
                 initialEl.className = 'avatar-initial';
@@ -344,14 +375,40 @@
 
     onSnapshot(collection(db, "links"), (snapshot) => {
         allLinks = [];
-        snapshot.forEach(d => allLinks.push({ id: d.id, ...d.data() }));
+        snapshot.forEach(d => {
+            const data = d.data();
+            allLinks.push({ 
+                id: d.id, 
+                ...data,
+                platform: detectPlatform(data.url)
+            });
+        });
         allLinks.sort((a, b) => (b.clicks || 0) - (a.clicks || 0));
+        renderPlatforms();
         renderTags();
         renderList();
     }, (err) => {
         console.error(err);
         showToast("❌ โหลดข้อมูลไม่สำเร็จ");
     });
+
+    function renderPlatforms() {
+        const platformBar = document.getElementById('platformBar');
+        platformBar.innerHTML = "";
+        
+        const platforms = ["ทั้งหมด", ...new Set(allLinks.map(l => l.platform))];
+        platforms.forEach(p => {
+            const el = document.createElement('div');
+            el.className = 'tag-filter platform-filter' + (activePlatform === p ? ' active' : '');
+            el.textContent = p === "ทั้งหมด" ? "✨ ทั้งหมด" : (PLATFORM_ICONS[p] || p);
+            el.addEventListener('click', () => {
+                activePlatform = p;
+                renderPlatforms();
+                renderList();
+            });
+            platformBar.appendChild(el);
+        });
+    }
 
     function renderTags() {
         const tagBar = document.getElementById('tagBar');
@@ -379,7 +436,8 @@
             const tag = (l.tag || '').toLowerCase();
             const matchesSearch = !searchTerm || name.includes(searchTerm) || tag.includes(searchTerm);
             const matchesTag = activeTag === "ทั้งหมด" || l.tag === activeTag;
-            return matchesSearch && matchesTag;
+            const matchesPlatform = activePlatform === "ทั้งหมด" || l.platform === activePlatform;
+            return matchesSearch && matchesTag && matchesPlatform;
         });
 
         filtered.forEach((item, index) => {
@@ -408,7 +466,6 @@
             badge.title = 'รูปโปรไฟล์จริง';
             avatarWrap.appendChild(badge);
 
-            // เรียกระบบแสดงผลรูป/ fallback ตัวอักษร
             renderAvatar(avatarWrap, badge, getAvatarChain(item.url, item.iconUrl), item.name);
 
             const textWrap = document.createElement('div');
@@ -417,11 +474,23 @@
             nameEl.style.cssText = 'white-space:nowrap; text-overflow:ellipsis; overflow:hidden; display:block; font-size:15px;';
             nameEl.title = item.name || '';
             nameEl.textContent = item.name || '';
+            
+            const badgesWrap = document.createElement('div');
+            badgesWrap.className = 'badges-wrap';
+
             const tagEl = document.createElement('span');
             tagEl.className = 'tag-label';
             tagEl.textContent = displayTag;
+
+            const platformEl = document.createElement('span');
+            platformEl.className = 'platform-label';
+            platformEl.textContent = (PLATFORM_ICONS[item.platform] || item.platform).replace(/^[^\s]+\s/, ''); // เอาแค่ชื่อแอป
+
+            badgesWrap.appendChild(tagEl);
+            badgesWrap.appendChild(platformEl);
+
             textWrap.appendChild(nameEl);
-            textWrap.appendChild(tagEl);
+            textWrap.appendChild(badgesWrap);
 
             header.appendChild(avatarWrap);
             header.appendChild(textWrap);
