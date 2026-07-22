@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Varp Lnk Pro - Minimalist</title>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <title>Varp Lnk Pro - Cyber Neon</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #1e293b;
+            --primary: #0f172a;
             --accent: #3b82f6;
-            --card-glass: rgba(255, 255, 255, 0.85);
+            --card-glass: rgba(15, 23, 42, 0.75);
+            --glow-color: rgba(59, 130, 246, 0.5);
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -19,162 +20,189 @@
             margin: 0; padding: 15px; 
             min-height: 100vh;
             display: flex; flex-direction: column; align-items: center;
-            background-color: #0f172a; overflow-x: hidden;
+            background-color: #030712; color: #f8fafc; overflow-x: hidden;
+            perspective: 1000px;
         }
 
+        /* Dynamic Animated Cyber Background */
         .bg-animate {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
-            background: radial-gradient(circle at 0% 0%, #1e293b 0%, transparent 50%),
-                        radial-gradient(circle at 100% 100%, #334155 0%, transparent 50%),
-                        radial-gradient(circle at 100% 0%, #2563eb 0%, transparent 30%),
-                        radial-gradient(circle at 0% 100%, #7c3aed 0%, transparent 30%);
-            animation: bgShift 25s ease-in-out infinite alternate;
+            background: radial-gradient(circle at 10% 20%, rgba(37, 99, 235, 0.15) 0%, transparent 40%),
+                        radial-gradient(circle at 90% 80%, rgba(124, 58, 237, 0.15) 0%, transparent 40%),
+                        radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.1) 0%, transparent 50%);
+            animation: bgShift 20s ease-in-out infinite alternate;
             will-change: transform;
         }
 
-        @keyframes bgShift { 0% { transform: scale(1); } 100% { transform: scale(1.05) rotate(1deg); } }
+        @keyframes bgShift { 0% { transform: scale(1); } 100% { transform: scale(1.1) rotate(2deg); } }
 
         .container { 
-            background: var(--card-glass); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             padding: 15px 20px; border-radius: 20px; 
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); 
-            width: 98%; max-width: 1100px; margin-bottom: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8), inset 0 0 15px rgba(255, 255, 255, 0.05); 
+            width: 98%; max-width: 1100px; margin-bottom: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center;
             transition: 0.3s;
         }
 
-        /* Highlight เมื่ออยู่ในโหมดแก้ไข */
         .container.edit-mode {
-            border: 2px solid #f59e0b;
-            box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+            border: 1px solid #f59e0b;
+            box-shadow: 0 0 25px rgba(245, 158, 11, 0.4);
         }
 
-        h2 { font-size: 1.1rem; margin: 0; color: var(--primary); white-space: nowrap; }
+        h2 { font-size: 1.2rem; margin: 0; color: #38bdf8; text-shadow: 0 0 10px rgba(56, 189, 248, 0.5); white-space: nowrap; font-weight: 700; }
 
         .input-group { display: flex; gap: 8px; flex: 3; min-width: 280px; flex-wrap: wrap; }
         input { 
-            width: 100%; padding: 10px 15px; border: 1px solid rgba(0,0,0,0.1); border-radius: 12px; 
-            background: rgba(255, 255, 255, 0.9); font-size: 13px; font-family: 'Kanit'; outline: none; transition: 0.2s;
+            width: 100%; padding: 10px 15px; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; 
+            background: rgba(15, 23, 42, 0.6); color: #fff; font-size: 13px; font-family: 'Kanit'; outline: none; transition: 0.2s;
         }
-        input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        input:focus { border-color: var(--accent); box-shadow: 0 0 15px rgba(59, 130, 246, 0.3); }
         .input-group input { flex: 1; min-width: 120px; }
-        #tagInput { flex: 0.8; background: #f0f9ff; }
-        #customImgInput { flex: 1; background: #fff7ed; }
+        #tagInput { flex: 0.8; background: rgba(56, 189, 248, 0.05); }
+        #customImgInput { flex: 1; background: rgba(245, 158, 11, 0.05); }
 
         .btn-group { display: flex; gap: 5px; flex-shrink: 0; }
         button { padding: 10px 18px; border-radius: 12px; font-weight: 600; border: none; cursor: pointer; transition: 0.2s; font-family: 'Kanit'; font-size: 13px; }
-        #addBtn { background: var(--primary); color: white; }
-        #addBtn.edit-btn-active { background: #f59e0b; color: white; }
-        #clearInputBtn { background: #e2e8f0; color: #475569; }
+        #addBtn { background: linear-gradient(135deg, #2563eb, #3b82f6); color: white; box-shadow: 0 0 15px rgba(37, 99, 235, 0.4); }
+        #addBtn.edit-btn-active { background: linear-gradient(135deg, #d97706, #f59e0b); box-shadow: 0 0 15px rgba(245, 158, 11, 0.4); }
+        #clearInputBtn { background: rgba(255, 255, 255, 0.1); color: #cbd5e1; }
 
-        #searchBox { flex: 1.5; min-width: 150px; background: rgba(255, 255, 255, 0.5); border: 1px dashed rgba(0,0,0,0.2); }
+        #searchBox { flex: 1.5; min-width: 150px; background: rgba(255, 255, 255, 0.03); border: 1px dashed rgba(255,255,255,0.2); }
 
         .filter-section {
-            width: 100%; max-width: 1100px; display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px;
+            width: 100%; max-width: 1100px; display: flex; flex-direction: column; gap: 5px; margin-bottom: 15px;
         }
-        .bar-label { font-size: 11px; color: #94a3b8; margin-left: 5px; font-weight: 600; }
+        .bar-label { font-size: 11px; color: #64748b; margin-left: 5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
         .tag-bar {
             width: 100%; display: flex; gap: 8px; overflow-x: auto;
             padding: 4px 0; scrollbar-width: none;
         }
         .tag-bar::-webkit-scrollbar { display: none; }
         .tag-filter {
-            padding: 5px 15px; background: rgba(255,255,255,0.1); color: #fff;
-            border-radius: 20px; font-size: 12px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2);
-            white-space: nowrap; transition: 0.2s; display: flex; align-items: center; gap: 5px;
+            padding: 6px 16px; background: rgba(255,255,255,0.05); color: #94a3b8;
+            border-radius: 20px; font-size: 12px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1);
+            white-space: nowrap; transition: 0.3s; display: flex; align-items: center; gap: 5px;
         }
-        .tag-filter.active { background: var(--accent); border-color: var(--accent); font-weight: 600; }
-        .platform-filter.active { background: #8b5cf6; border-color: #8b5cf6; font-weight: 600; }
+        .tag-filter.active { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; box-shadow: 0 0 12px rgba(59, 130, 246, 0.5); }
+        .platform-filter.active { background: #8b5cf6; color: #fff; border-color: #8b5cf6; font-weight: 600; box-shadow: 0 0 12px rgba(139, 92, 246, 0.5); }
 
         #list { 
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-            gap: 20px; width: 100%; max-width: 1250px; padding-bottom: 60px;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+            gap: 22px; width: 100%; max-width: 1250px; padding-bottom: 60px;
         }
 
+        /* 3D Cyber Holographic Card */
         .link-item { 
-            background: rgba(255, 255, 255, 0.88);
-            backdrop-filter: blur(6px);
+            background: var(--card-glass);
+            backdrop-filter: blur(12px);
             padding: 20px; 
             border-radius: 22px; 
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            min-height: 140px;
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            opacity: 0;
-            transform: translateY(20px);
+            display: flex; flex-direction: column; justify-content: space-between;
+            min-height: 150px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            opacity: 0; transform: translateY(20px);
             animation: fadeUp 0.4s ease forwards;
-            transition: 0.2s;
+            transition: transform 0.15s cubic-bezier(0.2, 0, 0.2, 1), box-shadow 0.3s ease, border-color 0.3s ease;
             position: relative;
+            transform-style: preserve-3d;
         }
 
-        .link-item:hover { transform: translateY(-5px) scale(1.01); box-shadow: 0 15px 30px rgba(0,0,0,0.2); background: #fff; }
-        .link-item b { font-size: 16px; color: var(--primary); display: block; }
+        /* Neon Glow According to Platform */
+        .link-item[data-platform="tiktok"] { --glow: #ff0050; --glow-secondary: #00f2fe; }
+        .link-item[data-platform="instagram"] { --glow: #f09433; --glow-secondary: #bc1888; }
+        .link-item[data-platform="twitter"] { --glow: #1da1f2; --glow-secondary: #0f172a; }
+        .link-item[data-platform="facebook"] { --glow: #1877f2; --glow-secondary: #3b5998; }
+        .link-item[data-platform="youtube"] { --glow: #ff0000; --glow-secondary: #990000; }
+        .link-item[data-platform="github"] { --glow: #a855f7; --glow-secondary: #6366f1; }
+        .link-item[data-platform="other"] { --glow: #3b82f6; --glow-secondary: #06b6d4; }
+
+        .link-item:hover { 
+            border-color: var(--glow);
+            box-shadow: 0 10px 30px -5px rgba(0,0,0,0.8), 0 0 20px 2px var(--glow);
+            background: rgba(15, 23, 42, 0.85);
+        }
+
+        .link-item b { font-size: 16px; color: #f8fafc; display: block; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
         
-        .badges-wrap { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
-        .tag-label { font-size: 9px; padding: 2px 6px; background: #e0f2fe; color: #0369a1; border-radius: 5px; font-weight: 600; }
-        .platform-label { font-size: 9px; padding: 2px 6px; background: #f3e8ff; color: #6b21a8; border-radius: 5px; font-weight: 600; }
+        .badges-wrap { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+        
+        /* Animated Cyber Badges */
+        .tag-label { 
+            font-size: 9px; padding: 2px 8px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; 
+            border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px; font-weight: 600; 
+        }
+        .platform-label { 
+            font-size: 9px; padding: 2px 8px; background: rgba(168, 85, 247, 0.15); color: #c084fc; 
+            border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 6px; font-weight: 600;
+            animation: pulseBadge 3s infinite alternate;
+        }
+
+        @keyframes pulseBadge { 0% { opacity: 0.8; } 100% { opacity: 1; filter: drop-shadow(0 0 3px var(--glow)); } }
 
         .avatar-wrap { position: relative; flex-shrink: 0; width: 48px; height: 48px; }
         .avatar-img {
-            width: 48px; height: 48px; border-radius: 12px; object-fit: cover;
-            border: 1px solid #eee; background: #fff; display: block;
+            width: 48px; height: 48px; border-radius: 14px; object-fit: cover;
+            border: 1px solid rgba(255,255,255,0.15); background: #0f172a; display: block;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
         .avatar-initial {
-            width: 48px; height: 48px; border-radius: 12px;
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            color: #fff; font-weight: 600; font-size: 20px;
+            width: 48px; height: 48px; border-radius: 14px;
+            background: linear-gradient(135deg, var(--glow, #3b82f6), var(--glow-secondary, #8b5cf6));
+            color: #fff; font-weight: 700; font-size: 20px;
             display: flex; align-items: center; justify-content: center;
-            text-transform: uppercase; border: 1px solid rgba(255,255,255,0.8);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-transform: uppercase; border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 0 15px var(--glow, rgba(59, 130, 246, 0.4));
         }
         .avatar-badge {
-            position: absolute; bottom: -3px; right: -3px;
-            width: 16px; height: 16px; border-radius: 50%;
-            background: #22c55e; border: 2px solid #fff;
-            display: none;
+            position: absolute; bottom: -2px; right: -2px;
+            width: 14px; height: 14px; border-radius: 50%;
+            background: #22c55e; border: 2px solid #0f172a;
+            display: none; box-shadow: 0 0 8px #22c55e;
         }
         .avatar-wrap.has-profile .avatar-badge { display: block; }
 
         .click-badge {
             position: absolute; top: 12px; right: 12px;
-            background: var(--accent); color: white;
+            background: rgba(255, 255, 255, 0.08); color: #38bdf8;
             font-size: 10px; padding: 2px 8px; border-radius: 10px;
-            font-weight: 600; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+            font-weight: 600; border: 1px solid rgba(56, 189, 248, 0.2);
         }
 
-        .action-btns { display: flex; gap: 4px; margin-top: 15px; }
-        .action-btns button { padding: 8px 4px; flex: 1; font-size: 11px; border-radius: 10px; }
-        .copy-btn { background: #f0f9ff; color: #0369a1; }
-        .edit-btn { background: #fef3c7; color: #d97706; }
-        .qr-btn { background: #f3e8ff; color: #7c3aed; }
-        .del-btn { background: #fff1f2; color: #be123c; }
-        .open-btn { background: #1e293b; color: white; }
+        .action-btns { display: flex; gap: 5px; margin-top: 15px; }
+        .action-btns button { 
+            padding: 8px 4px; flex: 1; font-size: 11px; border-radius: 10px; 
+            background: rgba(255,255,255,0.05); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.08);
+            transition: 0.2s;
+        }
+        .action-btns button:hover { background: rgba(255,255,255,0.15); color: #fff; transform: translateY(-2px); }
+        .open-btn { background: #3b82f6 !important; color: white !important; font-weight: 600; border: none !important; box-shadow: 0 0 10px rgba(59, 130, 246, 0.4); }
 
         /* Modal Overlay */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
+            background: rgba(3, 7, 18, 0.8); backdrop-filter: blur(8px);
             display: flex; align-items: center; justify-content: center;
             z-index: 10000; opacity: 0; pointer-events: none; transition: 0.3s;
         }
         .modal-overlay.show { opacity: 1; pointer-events: auto; }
         .modal-card {
-            background: #fff; padding: 25px; border-radius: 24px;
+            background: #0f172a; padding: 25px; border-radius: 24px;
             display: flex; flex-direction: column; align-items: center; gap: 15px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3); max-width: 90%; width: 300px;
-            transform: scale(0.8); transition: 0.3s;
+            box-shadow: 0 0 40px rgba(59, 130, 246, 0.3); max-width: 90%; width: 300px;
+            border: 1px solid rgba(255,255,255,0.1); transform: scale(0.8); transition: 0.3s;
         }
         .modal-overlay.show .modal-card { transform: scale(1); }
-        .modal-card img { width: 180px; height: 180px; border-radius: 12px; border: 1px solid #eee; }
-        .modal-card b { color: var(--primary); text-align: center; font-size: 16px; }
+        .modal-card img { width: 180px; height: 180px; border-radius: 12px; background: #fff; padding: 8px; }
+        .modal-card b { color: #38bdf8; text-align: center; font-size: 16px; }
 
         .toast { 
             position: fixed; bottom: 30px; left: 50%; 
             transform: translate(-50%, 20px); opacity: 0;
-            background: #1e293b; color: white; padding: 10px 25px; 
+            background: #0f172a; color: white; padding: 10px 25px; 
             border-radius: 50px; font-size: 13px; z-index: 9999;
+            border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 0 20px rgba(0,0,0,0.8);
             transition: all 0.3s ease; pointer-events: none;
         }
         .toast.show { transform: translate(-50%, 0); opacity: 1; }
@@ -192,14 +220,14 @@
     <div class="modal-card">
         <b id="qrTitle">QR Code</b>
         <img id="qrImg" src="" alt="QR Code">
-        <button id="closeQrBtn" style="background: var(--primary); color: white; width: 100%;">ปิดหน้าต่าง</button>
+        <button id="closeQrBtn" style="background: var(--accent); color: white; width: 100%;">ปิดหน้าต่าง</button>
     </div>
 </div>
 
 <div class="container" id="mainContainer">
-    <h2 id="formHeader">Varp Lnk</h2>
+    <h2 id="formHeader">⚡ Varp Lnk Pro</h2>
     <div class="input-group">
-        <input type="text" id="url" placeholder="URL https://... (กรอกอันนี้ก่อน)">
+        <input type="text" id="url" placeholder="URL https://... (วางลิงก์ที่นี่)">
         <input type="text" id="name" placeholder="ชื่อรายการ (ดึงให้อัตโนมัติ)">
         <input type="text" id="tagInput" placeholder="หมวดหมู่...">
         <input type="text" id="customImgInput" placeholder="🖼️ ลิงก์รูปภาพ (เว้นได้)">
@@ -240,7 +268,7 @@
     let searchTerm = "";
     let activeTag = "ทั้งหมด";
     let activePlatform = "ทั้งหมด";
-    let editingId = null; // ตัวแปรเก็บ ID ที่กำลังแก้ไข
+    let editingId = null;
 
     const PLATFORM_ICONS = {
         'tiktok': '🎵 TikTok',
@@ -263,7 +291,7 @@
     let fetchTimer;
     document.getElementById('url').addEventListener('input', (e) => {
         let rawUrl = e.target.value.trim();
-        if (!rawUrl || editingId) return; // ถ้าอยู่ในโหมดแก้ไข ไม่ต้องดึงใหม่อัตโนมัติ
+        if (!rawUrl || editingId) return;
 
         if (!/^https?:\/\//i.test(rawUrl)) rawUrl = 'https://' + rawUrl;
 
@@ -291,7 +319,6 @@
         }, 600);
     });
 
-    // Detect Platform & Social Profile
     function detectPlatform(rawUrl) {
         let u;
         try { u = new URL(rawUrl); } catch (e) { return 'other'; }
@@ -406,7 +433,6 @@
 
     // --------------------------------------------------------
 
-    // ปุ่ม บันทึก / อัปเดต
     document.getElementById('addBtn').onclick = async () => {
         const name = document.getElementById('name').value.trim();
         let url = document.getElementById('url').value.trim();
@@ -419,12 +445,10 @@
 
         try {
             if (editingId) {
-                // อัปเดตข้อมูลเดิม
                 await updateDoc(doc(db, "links", editingId), { name, url, tag, iconUrl });
                 showToast("อัปเดตเรียบร้อย ✏️");
                 resetForm();
             } else {
-                // บันทึกรายการใหม่
                 await addDoc(collection(db, "links"), { name, url, tag, iconUrl, clicks: 0 });
                 resetForm();
                 showToast("บันทึกแล้ว ✨");
@@ -446,7 +470,7 @@
         addBtn.textContent = "บันทึก";
         addBtn.classList.remove('edit-btn-active');
         document.getElementById('mainContainer').classList.remove('edit-mode');
-        document.getElementById('formHeader').textContent = "Varp Lnk";
+        document.getElementById('formHeader').textContent = "⚡ Varp Lnk Pro";
     }
 
     document.getElementById('clearInputBtn').onclick = resetForm;
@@ -510,6 +534,35 @@
         });
     }
 
+    // 3D Holographic Tilt Animation Effect
+    function apply3DTilt(card) {
+        card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            
+            const rotateX = ((y - centerY) / centerY) * -12;
+            const rotateY = ((x - centerX) / centerX) * 12;
+            
+            card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.03, 1.03, 1.03)`;
+        });
+
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
+        });
+
+        // Touch Friendly Tilt for Mobile
+        card.addEventListener('touchstart', () => {
+            card.style.transform = `scale3d(0.98, 0.98, 0.98)`;
+        });
+        card.addEventListener('touchend', () => {
+            card.style.transform = `scale3d(1, 1, 1)`;
+        });
+    }
+
     function renderList() {
         const listDiv = document.getElementById('list');
         listDiv.innerHTML = "";
@@ -526,7 +579,10 @@
         filtered.forEach((item, index) => {
             const card = document.createElement('div');
             card.className = 'link-item';
+            card.dataset.platform = item.platform || 'other';
             card.style.animationDelay = `${index * 0.05}s`;
+
+            apply3DTilt(card); // ใส่เอฟเฟกต์ 3D Tilt
 
             const displayTag = (!item.tag || item.tag === "undefined") ? "ทั่วไป" : item.tag;
             const clickCount = item.clicks || 0;
@@ -617,7 +673,6 @@
         });
     }
 
-    // ฟังก์ชันเข้าสู่โหมดแก้ไข
     function editLink(item) {
         editingId = item.id;
         document.getElementById('name').value = item.name || '';
@@ -631,7 +686,6 @@
         document.getElementById('mainContainer').classList.add('edit-mode');
         document.getElementById('formHeader').textContent = "✏️ แก้ไขรายการ";
 
-        // เลื่อนหน้าจอขึ้นไปด้านบนเพื่อให้แก้ไขสะดวก
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
