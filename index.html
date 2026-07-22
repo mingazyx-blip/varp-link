@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Varp Lnk Pro - Minimalist</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1e293b;
+            --accent: #3b82f6;
+            --card-glass: rgba(255, 255, 255, 0.85);
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body { 
+            font-family: 'Kanit', sans-serif; 
+            margin: 0; padding: 15px; 
+            min-height: 100vh;
+            display: flex; flex-direction: column; align-items: center;
+            background-color: #0f172a; overflow-x: hidden;
+        }
+
+        .bg-animate {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background: radial-gradient(circle at 0% 0%, #1e293b 0%, transparent 50%),
+                        radial-gradient(circle at 100% 100%, #334155 0%, transparent 50%),
+                        radial-gradient(circle at 100% 0%, #2563eb 0%, transparent 30%),
+                        radial-gradient(circle at 0% 100%, #7c3aed 0%, transparent 30%);
+            animation: bgShift 25s ease-in-out infinite alternate;
+            will-change: transform;
+        }
+
+        @keyframes bgShift { 0% { transform: scale(1); } 100% { transform: scale(1.05) rotate(1deg); } }
+
+        .container { 
+            background: var(--card-glass); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            padding: 12px 20px; border-radius: 20px; 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); 
+            width: 98%; max-width: 1100px; margin-bottom: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center;
+        }
+
+        h2 { font-size: 1.1rem; margin: 0; color: var(--primary); white-space: nowrap; }
+
+        .input-group { display: flex; gap: 8px; flex: 3; min-width: 250px; }
+        input { 
+            width: 100%; padding: 10px 15px; border: 1px solid rgba(0,0,0,0.1); border-radius: 12px; 
+            background: rgba(255, 255, 255, 0.9); font-size: 13px; font-family: 'Kanit'; outline: none; transition: 0.2s;
+        }
+        input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        #tagInput { flex: 0.6; background: #f0f9ff; }
+
+        .btn-group { display: flex; gap: 5px; flex-shrink: 0; }
+        button { padding: 10px 18px; border-radius: 12px; font-weight: 600; border: none; cursor: pointer; transition: 0.2s; font-family: 'Kanit'; font-size: 13px; }
+        #addBtn { background: var(--primary); color: white; }
+        #clearInputBtn { background: #e2e8f0; color: #475569; }
+
+        #searchBox { flex: 1.5; min-width: 150px; background: rgba(255, 255, 255, 0.5); border: 1px dashed rgba(0,0,0,0.2); }
+
+        .tag-bar {
+            width: 100%; max-width: 1100px; display: flex; gap: 8px; overflow-x: auto;
+            padding: 10px 0; margin-bottom: 10px; scrollbar-width: none;
+        }
+        .tag-bar::-webkit-scrollbar { display: none; }
+        .tag-filter {
+            padding: 5px 15px; background: rgba(255,255,255,0.1); color: #fff;
+            border-radius: 20px; font-size: 12px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2);
+            white-space: nowrap; transition: 0.2s;
+        }
+        .tag-filter.active { background: var(--accent); border-color: var(--accent); font-weight: 600; }
+
+        #list { 
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 20px; width: 100%; max-width: 1250px; padding-bottom: 60px;
+        }
+
+        .link-item { 
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(6px);
+            padding: 20px; 
+            border-radius: 22px; 
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 140px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeUp 0.4s ease forwards;
+            transition: 0.2s;
+            position: relative;
+        }
+
+        .link-item:hover { transform: translateY(-5px) scale(1.01); box-shadow: 0 15px 30px rgba(0,0,0,0.2); background: #fff; }
+        .link-item b { font-size: 16px; color: var(--primary); display: block; }
+        .tag-label { font-size: 9px; padding: 2px 6px; background: #e0f2fe; color: #0369a1; border-radius: 5px; font-weight: 600; margin-top: 4px; display: inline-block; }
+
+        .avatar-img {
+            width: 48px; height: 48px; border-radius: 12px; object-fit: cover;
+            border: 1px solid #eee; background: #fff; flex-shrink: 0;
+        }
+        .avatar-badge {
+            position: absolute; bottom: -3px; right: -3px;
+            width: 16px; height: 16px; border-radius: 50%;
+            background: #22c55e; border: 2px solid #fff;
+            display: none;
+        }
+        .avatar-wrap { position: relative; flex-shrink: 0; }
+        .avatar-wrap.has-profile .avatar-badge { display: block; }
+
+        .click-badge {
+            position: absolute; top: 12px; right: 12px;
+            background: var(--accent); color: white;
+            font-size: 10px; padding: 2px 8px; border-radius: 10px;
+            font-weight: 600; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+
+        .action-btns { display: flex; gap: 8px; margin-top: 15px; }
+        .action-btns button { padding: 8px; flex: 1; font-size: 12px; border-radius: 10px; }
+        .copy-btn { background: #f0f9ff; color: #0369a1; }
+        .del-btn { background: #fff1f2; color: #be123c; }
+        .open-btn { background: #1e293b; color: white; }
+
+        .toast { 
+            position: fixed; bottom: 30px; left: 50%; 
+            transform: translate(-50%, 20px); opacity: 0;
+            background: #1e293b; color: white; padding: 10px 25px; 
+            border-radius: 50px; font-size: 13px; z-index: 9999;
+            transition: all 0.3s ease; pointer-events: none;
+        }
+        .toast.show { transform: translate(-50%, 0); opacity: 1; }
+
+        @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } } 
+    </style>
+</head>
+<body>
+
+<div class="bg-animate"></div>
+<div id="toast" class="toast"></div>
+
+<div class="container">
+    <h2>Varp Lnk</h2>
+    <div class="input-group">
+        <input type="text" id="name" placeholder="ชื่อรายการ">
+        <input type="text" id="url" placeholder="URL https://...">
+        <input type="text" id="tagInput" placeholder="หมวดหมู่...">
+    </div>
+    <div class="btn-group">
+        <button id="addBtn">บันทึก</button>
+        <button id="clearInputBtn">ล้าง</button>
+    </div>
+    <input type="text" id="searchBox" placeholder="🔍 ค้นหาเร็ว...">
+</div>
+
+<div class="tag-bar" id="tagBar"></div>
+<div id="list"></div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyDYlgibxWMe7bPct515waryg2duBZRiECm",
+        authDomain: "my-links-505c4.firebaseapp.com",
+        projectId: "my-links-505c4",
+        storageBucket: "my-links-505c4.appspot.com",
+        messagingSenderId: "376694144",
+        appId: "1:376694144:web:31cb5856d61c0de0930d65"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    let allLinks = [];
+    let searchTerm = "";
+    let activeTag = "ทั้งหมด";
+
+    const DEFAULT_ICON = "https://cdn-icons-png.flaticon.com/512/1243/1243911.png";
+
+    const showToast = (msg) => {
+        const t = document.getElementById('toast');
+        t.innerText = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2000);
+    };
+
+    // ---------- Social profile picture detection ----------
+    // แปลง URL เป็น { platform, username } ถ้าเป็นลิงก์โซเชียลที่รู้จัก
+    function detectSocialProfile(rawUrl) {
+        let u;
+        try { u = new URL(rawUrl); } catch (e) { return null; }
+
+        const host = u.hostname.replace(/^www\./i, '').toLowerCase();
+        const parts = u.pathname.split('/').filter(Boolean);
+        if (parts.length === 0) return null;
+
+        const clean = (s) => s ? s.replace(/^@/, '').split('?')[0].split('#')[0] : null;
+
+        // path ที่ไม่ใช่ username จริง (หน้าอื่นๆ ของแต่ละแพลตฟอร์ม)
+        const nonUserPaths = new Set(['home', 'explore', 'search', 'i', 'watch', 'channel', 'c', 'p', 'reel', 'reels', 'stories', 'photo', 'video', 'videos', 'status', 'in', 'company', 'groups', 'sharer', 'share']);
+
+        if (host === 'twitter.com' || host === 'x.com') {
+            const uname = clean(parts[0]);
+            if (uname && !nonUserPaths.has(uname.toLowerCase())) return { platform: 'twitter', username: uname };
+        }
+        if (host === 'github.com') {
+            const uname = clean(parts[0]);
+            if (uname) return { platform: 'github', username: uname };
+        }
+        if (host === 'instagram.com') {
+            const uname = clean(parts[0]);
+            if (uname && !nonUserPaths.has(uname.toLowerCase())) return { platform: 'instagram', username: uname };
+        }
+        if (host === 'youtube.com') {
+            // รองรับ /@handle และ /c/name และ /channel/... (channel id ใช้ไม่ได้กับ unavatar เลยข้าม)
+            if (parts[0] && parts[0].startsWith('@')) return { platform: 'youtube', username: clean(parts[0]) };
+            if (parts[0] === 'c' && parts[1]) return { platform: 'youtube', username: clean(parts[1]) };
+        }
+        if (host === 'facebook.com' || host === 'fb.com') {
+            const uname = clean(parts[0]);
+            if (uname && !nonUserPaths.has(uname.toLowerCase())) return { platform: 'facebook', username: uname };
+        }
+        if (host === 'tiktok.com') {
+            const uname = clean(parts[0]);
+            if (uname && uname.startsWith('@')) return { platform: 'tiktok', username: clean(uname) };
+            // เผื่อ path เป็น /@name โดยตรง (ผ่าน clean มาแล้ว)
+            if (uname) return { platform: 'tiktok', username: uname };
+        }
+
+        return null;
+    }
+
+    // สร้างลิสต์ URL รูปที่จะลองตามลำดับ: unavatar (ถ้าตรวจเจอโปรไฟล์) -> favicon -> ไอคอน default
+    function getAvatarChain(url) {
+        const chain = [];
+        const social = detectSocialProfile(url);
+        if (social) {
+            chain.push({ src: `https://unavatar.io/${social.platform}/${social.username}`, isProfile: true });
+        }
+        try {
+            const host = new URL(url).hostname;
+            chain.push({ src: `https://www.google.com/s2/favicons?domain=${host}&sz=128`, isProfile: false });
+        } catch (e) { /* ignore */ }
+        chain.push({ src: DEFAULT_ICON, isProfile: false });
+        return chain;
+    }
+
+    function attachAvatarFallback(imgEl, badgeEl, chain) {
+        let step = 0;
+        const tryNext = () => {
+            if (step >= chain.length) return;
+            imgEl.src = chain[step].src;
+            imgEl.dataset.isProfile = chain[step].isProfile ? '1' : '0';
+        };
+        imgEl.addEventListener('error', () => {
+            step += 1;
+            tryNext();
+        });
+        imgEl.addEventListener('load', () => {
+            if (badgeEl) badgeEl.parentElement.classList.toggle('has-profile', imgEl.dataset.isProfile === '1');
+        });
+        tryNext();
+    }
+    // --------------------------------------------------------
+
+    document.getElementById('addBtn').onclick = async () => {
+        const name = document.getElementById('name').value.trim();
+        let url = document.getElementById('url').value.trim();
+        const tag = document.getElementById('tagInput').value.trim() || "ทั่วไป";
+
+        if (!name || !url) return showToast("⚠️ กรอกให้ครบ");
+
+        if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+
+        try {
+            await addDoc(collection(db, "links"), { name, url, tag, clicks: 0 });
+            document.getElementById('name').value = '';
+            document.getElementById('url').value = '';
+            document.getElementById('tagInput').value = '';
+            showToast("บันทึกแล้ว ✨");
+        } catch (e) {
+            console.error(e);
+            showToast("❌ บันทึกไม่สำเร็จ");
+        }
+    };
+
+    document.getElementById('clearInputBtn').onclick = () => {
+        document.getElementById('name').value = '';
+        document.getElementById('url').value = '';
+        document.getElementById('tagInput').value = '';
+    };
+
+    document.getElementById('searchBox').oninput = (e) => {
+        searchTerm = e.target.value.toLowerCase();
+        renderList();
+    };
+
+    onSnapshot(collection(db, "links"), (snapshot) => {
+        allLinks = [];
+        snapshot.forEach(d => allLinks.push({ id: d.id, ...d.data() }));
+        allLinks.sort((a, b) => (b.clicks || 0) - (a.clicks || 0));
+        renderTags();
+        renderList();
+    }, (err) => {
+        console.error(err);
+        showToast("❌ โหลดข้อมูลไม่สำเร็จ");
+    });
+
+    function renderTags() {
+        const tagBar = document.getElementById('tagBar');
+        tagBar.innerHTML = "";
+        const tags = ["ทั้งหมด", ...new Set(allLinks.map(l => l.tag).filter(t => t && t !== "undefined"))];
+        tags.forEach(t => {
+            const el = document.createElement('div');
+            el.className = 'tag-filter' + (activeTag === t ? ' active' : '');
+            el.textContent = t;
+            el.addEventListener('click', () => {
+                activeTag = t;
+                renderTags();
+                renderList();
+            });
+            tagBar.appendChild(el);
+        });
+    }
+
+    function renderList() {
+        const listDiv = document.getElementById('list');
+        listDiv.innerHTML = "";
+
+        const filtered = allLinks.filter(l => {
+            const name = (l.name || '').toLowerCase();
+            const tag = (l.tag || '').toLowerCase();
+            const matchesSearch = !searchTerm || name.includes(searchTerm) || tag.includes(searchTerm);
+            const matchesTag = activeTag === "ทั้งหมด" || l.tag === activeTag;
+            return matchesSearch && matchesTag;
+        });
+
+        filtered.forEach((item, index) => {
+            const card = document.createElement('div');
+            card.className = 'link-item';
+            card.style.animationDelay = `${index * 0.05}s`;
+
+            const displayTag = (!item.tag || item.tag === "undefined") ? "ทั่วไป" : item.tag;
+            const clickCount = item.clicks || 0;
+
+            // click badge
+            const clickBadge = document.createElement('div');
+            clickBadge.className = 'click-badge';
+            clickBadge.textContent = `🖱️ ${clickCount}`;
+            card.appendChild(clickBadge);
+
+            // header row
+            const header = document.createElement('div');
+            header.style.cssText = 'display:flex; align-items:center; gap:12px;';
+
+            const avatarWrap = document.createElement('div');
+            avatarWrap.className = 'avatar-wrap';
+            const img = document.createElement('img');
+            img.className = 'avatar-img';
+            const badge = document.createElement('div');
+            badge.className = 'avatar-badge';
+            badge.title = 'รูปโปรไฟล์จริง';
+            avatarWrap.appendChild(img);
+            avatarWrap.appendChild(badge);
+            attachAvatarFallback(img, badge, getAvatarChain(item.url));
+
+            const textWrap = document.createElement('div');
+            textWrap.style.cssText = 'overflow:hidden; flex:1;';
+            const nameEl = document.createElement('b');
+            nameEl.style.cssText = 'white-space:nowrap; text-overflow:ellipsis; overflow:hidden; display:block; font-size:15px;';
+            nameEl.title = item.name || '';
+            nameEl.textContent = item.name || '';
+            const tagEl = document.createElement('span');
+            tagEl.className = 'tag-label';
+            tagEl.textContent = displayTag;
+            textWrap.appendChild(nameEl);
+            textWrap.appendChild(tagEl);
+
+            header.appendChild(avatarWrap);
+            header.appendChild(textWrap);
+            card.appendChild(header);
+
+            // action buttons
+            const actions = document.createElement('div');
+            actions.className = 'action-btns';
+
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'copy-btn';
+            copyBtn.textContent = 'คัดลอก';
+            copyBtn.addEventListener('click', () => copyLink(item.url));
+
+            const delBtn = document.createElement('button');
+            delBtn.className = 'del-btn';
+            delBtn.textContent = 'ลบ';
+            delBtn.addEventListener('click', () => deleteLink(item.id));
+
+            const openBtn = document.createElement('button');
+            openBtn.className = 'open-btn';
+            openBtn.textContent = 'เปิด';
+            openBtn.addEventListener('click', () => openAndTrack(item.id, item.url));
+
+            actions.appendChild(copyBtn);
+            actions.appendChild(delBtn);
+            actions.appendChild(openBtn);
+            card.appendChild(actions);
+
+            listDiv.appendChild(card);
+        });
+    }
+
+    async function openAndTrack(id, url) {
+        window.open(url, '_blank');
+        try {
+            await updateDoc(doc(db, "links", id), { clicks: increment(1) });
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    function copyLink(t) {
+        navigator.clipboard.writeText(t);
+        showToast("📋 คัดลอกแล้ว!");
+    }
+
+    async function deleteLink(id) {
+        if (!confirm("ลบรายการนี้?")) return;
+        try {
+            await deleteDoc(doc(db, "links", id));
+        } catch (e) {
+            console.error(e);
+            showToast("❌ ลบไม่สำเร็จ");
+        }
+    }
+</script>
+</body>
+</html>
