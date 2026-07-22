@@ -36,7 +36,7 @@
 
         .container { 
             background: var(--card-glass); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-            padding: 12px 20px; border-radius: 20px; 
+            padding: 15px 20px; border-radius: 20px; 
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); 
             width: 98%; max-width: 1100px; margin-bottom: 10px;
             border: 1px solid rgba(255, 255, 255, 0.3);
@@ -45,13 +45,15 @@
 
         h2 { font-size: 1.1rem; margin: 0; color: var(--primary); white-space: nowrap; }
 
-        .input-group { display: flex; gap: 8px; flex: 3; min-width: 250px; }
+        .input-group { display: flex; gap: 8px; flex: 3; min-width: 280px; flex-wrap: wrap; }
         input { 
             width: 100%; padding: 10px 15px; border: 1px solid rgba(0,0,0,0.1); border-radius: 12px; 
             background: rgba(255, 255, 255, 0.9); font-size: 13px; font-family: 'Kanit'; outline: none; transition: 0.2s;
         }
         input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
-        #tagInput { flex: 0.6; background: #f0f9ff; }
+        .input-group input { flex: 1; min-width: 120px; }
+        #tagInput { flex: 0.8; background: #f0f9ff; }
+        #customImgInput { flex: 1; background: #fff7ed; }
 
         .btn-group { display: flex; gap: 5px; flex-shrink: 0; }
         button { padding: 10px 18px; border-radius: 12px; font-weight: 600; border: none; cursor: pointer; transition: 0.2s; font-family: 'Kanit'; font-size: 13px; }
@@ -98,9 +100,19 @@
         .link-item b { font-size: 16px; color: var(--primary); display: block; }
         .tag-label { font-size: 9px; padding: 2px 6px; background: #e0f2fe; color: #0369a1; border-radius: 5px; font-weight: 600; margin-top: 4px; display: inline-block; }
 
+        /* Avatar Container & Fallback Avatar (Initial Box) */
+        .avatar-wrap { position: relative; flex-shrink: 0; width: 48px; height: 48px; }
         .avatar-img {
             width: 48px; height: 48px; border-radius: 12px; object-fit: cover;
-            border: 1px solid #eee; background: #fff; flex-shrink: 0;
+            border: 1px solid #eee; background: #fff; display: block;
+        }
+        .avatar-initial {
+            width: 48px; height: 48px; border-radius: 12px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: #fff; font-weight: 600; font-size: 20px;
+            display: flex; align-items: center; justify-content: center;
+            text-transform: uppercase; border: 1px solid rgba(255,255,255,0.8);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         .avatar-badge {
             position: absolute; bottom: -3px; right: -3px;
@@ -108,7 +120,6 @@
             background: #22c55e; border: 2px solid #fff;
             display: none;
         }
-        .avatar-wrap { position: relative; flex-shrink: 0; }
         .avatar-wrap.has-profile .avatar-badge { display: block; }
 
         .click-badge {
@@ -147,6 +158,7 @@
         <input type="text" id="name" placeholder="ชื่อรายการ">
         <input type="text" id="url" placeholder="URL https://...">
         <input type="text" id="tagInput" placeholder="หมวดหมู่...">
+        <input type="text" id="customImgInput" placeholder="🖼️ ลิงก์รูปภาพ (เว้นได้)">
     </div>
     <div class="btn-group">
         <button id="addBtn">บันทึก</button>
@@ -177,8 +189,6 @@
     let searchTerm = "";
     let activeTag = "ทั้งหมด";
 
-    const DEFAULT_ICON = "https://cdn-icons-png.flaticon.com/512/1243/1243911.png";
-
     const showToast = (msg) => {
         const t = document.getElementById('toast');
         t.innerText = msg;
@@ -187,7 +197,6 @@
     };
 
     // ---------- Social profile picture detection ----------
-    // แปลง URL เป็น { platform, username } ถ้าเป็นลิงก์โซเชียลที่รู้จัก
     function detectSocialProfile(rawUrl) {
         let u;
         try { u = new URL(rawUrl); } catch (e) { return null; }
@@ -197,8 +206,6 @@
         if (parts.length === 0) return null;
 
         const clean = (s) => s ? s.replace(/^@/, '').split('?')[0].split('#')[0] : null;
-
-        // path ที่ไม่ใช่ username จริง (หน้าอื่นๆ ของแต่ละแพลตฟอร์ม)
         const nonUserPaths = new Set(['home', 'explore', 'search', 'i', 'watch', 'channel', 'c', 'p', 'reel', 'reels', 'stories', 'photo', 'video', 'videos', 'status', 'in', 'company', 'groups', 'sharer', 'share']);
 
         if (host === 'twitter.com' || host === 'x.com') {
@@ -214,7 +221,6 @@
             if (uname && !nonUserPaths.has(uname.toLowerCase())) return { platform: 'instagram', username: uname };
         }
         if (host === 'youtube.com') {
-            // รองรับ /@handle และ /c/name และ /channel/... (channel id ใช้ไม่ได้กับ unavatar เลยข้าม)
             if (parts[0] && parts[0].startsWith('@')) return { platform: 'youtube', username: clean(parts[0]) };
             if (parts[0] === 'c' && parts[1]) return { platform: 'youtube', username: clean(parts[1]) };
         }
@@ -225,60 +231,98 @@
         if (host === 'tiktok.com') {
             const uname = clean(parts[0]);
             if (uname && uname.startsWith('@')) return { platform: 'tiktok', username: clean(uname) };
-            // เผื่อ path เป็น /@name โดยตรง (ผ่าน clean มาแล้ว)
             if (uname) return { platform: 'tiktok', username: uname };
         }
 
         return null;
     }
 
-    // สร้างลิสต์ URL รูปที่จะลองตามลำดับ: unavatar (ถ้าตรวจเจอโปรไฟล์) -> favicon -> ไอคอน default
-    function getAvatarChain(url) {
+    // สร้างลำดับ URL รูปที่จะลองดึง
+    function getAvatarChain(url, customImg) {
         const chain = [];
+        
+        // 1. ลิงก์รูปภาพที่ผู้ใช้ใส่เอง (ถ้ามี)
+        if (customImg && customImg.trim() !== "") {
+            chain.push({ src: customImg.trim(), isProfile: true });
+        }
+
+        // 2. ดึงจาก Social Profile (unavatar)
         const social = detectSocialProfile(url);
         if (social) {
             chain.push({ src: `https://unavatar.io/${social.platform}/${social.username}`, isProfile: true });
         }
+
+        // 3. ดึงจาก Google Favicon Service
         try {
             const host = new URL(url).hostname;
             chain.push({ src: `https://www.google.com/s2/favicons?domain=${host}&sz=128`, isProfile: false });
         } catch (e) { /* ignore */ }
-        chain.push({ src: DEFAULT_ICON, isProfile: false });
+
+        // 4. ดึงจาก DuckDuckGo Favicon Service (สำรองเพิ่มเติม)
+        try {
+            const host = new URL(url).hostname;
+            chain.push({ src: `https://icons.duckduckgo.com/ip3/${host}.ico`, isProfile: false });
+        } catch (e) { /* ignore */ }
+
         return chain;
     }
 
-    function attachAvatarFallback(imgEl, badgeEl, chain) {
+    // โหลดรูปภาพ หรือแสดง Fallback ตัวอักษร
+    function renderAvatar(containerEl, badgeEl, chain, name) {
+        containerEl.innerHTML = "";
         let step = 0;
+
         const tryNext = () => {
-            if (step >= chain.length) return;
+            if (step >= chain.length) {
+                // หากดึงรูปไม่ขึ้นเลย ให้สร้างกล่องตัวอักษรตัวแรกของชื่อรายการแทน
+                const initial = (name || 'V').trim().charAt(0);
+                const initialEl = document.createElement('div');
+                initialEl.className = 'avatar-initial';
+                initialEl.textContent = initial;
+                containerEl.appendChild(initialEl);
+                if (badgeEl) badgeEl.parentElement.classList.remove('has-profile');
+                return;
+            }
+
+            const imgEl = document.createElement('img');
+            imgEl.className = 'avatar-img';
             imgEl.src = chain[step].src;
             imgEl.dataset.isProfile = chain[step].isProfile ? '1' : '0';
+
+            imgEl.onerror = () => {
+                step += 1;
+                tryNext();
+            };
+
+            imgEl.onload = () => {
+                containerEl.appendChild(imgEl);
+                if (badgeEl) {
+                    badgeEl.parentElement.classList.toggle('has-profile', imgEl.dataset.isProfile === '1');
+                }
+            };
         };
-        imgEl.addEventListener('error', () => {
-            step += 1;
-            tryNext();
-        });
-        imgEl.addEventListener('load', () => {
-            if (badgeEl) badgeEl.parentElement.classList.toggle('has-profile', imgEl.dataset.isProfile === '1');
-        });
+
         tryNext();
     }
+
     // --------------------------------------------------------
 
     document.getElementById('addBtn').onclick = async () => {
         const name = document.getElementById('name').value.trim();
         let url = document.getElementById('url').value.trim();
         const tag = document.getElementById('tagInput').value.trim() || "ทั่วไป";
+        const iconUrl = document.getElementById('customImgInput').value.trim();
 
         if (!name || !url) return showToast("⚠️ กรอกให้ครบ");
 
         if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
 
         try {
-            await addDoc(collection(db, "links"), { name, url, tag, clicks: 0 });
+            await addDoc(collection(db, "links"), { name, url, tag, iconUrl, clicks: 0 });
             document.getElementById('name').value = '';
             document.getElementById('url').value = '';
             document.getElementById('tagInput').value = '';
+            document.getElementById('customImgInput').value = '';
             showToast("บันทึกแล้ว ✨");
         } catch (e) {
             console.error(e);
@@ -290,6 +334,7 @@
         document.getElementById('name').value = '';
         document.getElementById('url').value = '';
         document.getElementById('tagInput').value = '';
+        document.getElementById('customImgInput').value = '';
     };
 
     document.getElementById('searchBox').oninput = (e) => {
@@ -357,14 +402,14 @@
 
             const avatarWrap = document.createElement('div');
             avatarWrap.className = 'avatar-wrap';
-            const img = document.createElement('img');
-            img.className = 'avatar-img';
+
             const badge = document.createElement('div');
             badge.className = 'avatar-badge';
             badge.title = 'รูปโปรไฟล์จริง';
-            avatarWrap.appendChild(img);
             avatarWrap.appendChild(badge);
-            attachAvatarFallback(img, badge, getAvatarChain(item.url));
+
+            // เรียกระบบแสดงผลรูป/ fallback ตัวอักษร
+            renderAvatar(avatarWrap, badge, getAvatarChain(item.url, item.iconUrl), item.name);
 
             const textWrap = document.createElement('div');
             textWrap.style.cssText = 'overflow:hidden; flex:1;';
