@@ -62,7 +62,7 @@
 
         #searchBox { flex: 1.5; min-width: 150px; background: rgba(255, 255, 255, 0.5); border: 1px dashed rgba(0,0,0,0.2); }
 
-        /* Bars Style (Platform & Tags) */
+        /* Bars Style */
         .filter-section {
             width: 100%; max-width: 1100px; display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px;
         }
@@ -109,7 +109,6 @@
         .tag-label { font-size: 9px; padding: 2px 6px; background: #e0f2fe; color: #0369a1; border-radius: 5px; font-weight: 600; }
         .platform-label { font-size: 9px; padding: 2px 6px; background: #f3e8ff; color: #6b21a8; border-radius: 5px; font-weight: 600; }
 
-        /* Avatar Container & Fallback */
         .avatar-wrap { position: relative; flex-shrink: 0; width: 48px; height: 48px; }
         .avatar-img {
             width: 48px; height: 48px; border-radius: 12px; object-fit: cover;
@@ -138,11 +137,30 @@
             font-weight: 600; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
         }
 
-        .action-btns { display: flex; gap: 8px; margin-top: 15px; }
-        .action-btns button { padding: 8px; flex: 1; font-size: 12px; border-radius: 10px; }
+        .action-btns { display: flex; gap: 6px; margin-top: 15px; }
+        .action-btns button { padding: 8px 4px; flex: 1; font-size: 11px; border-radius: 10px; }
         .copy-btn { background: #f0f9ff; color: #0369a1; }
+        .qr-btn { background: #fef3c7; color: #d97706; }
         .del-btn { background: #fff1f2; color: #be123c; }
         .open-btn { background: #1e293b; color: white; }
+
+        /* QR Modal */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 10000; opacity: 0; pointer-events: none; transition: 0.3s;
+        }
+        .modal-overlay.show { opacity: 1; pointer-events: auto; }
+        .modal-card {
+            background: #fff; padding: 25px; border-radius: 24px;
+            display: flex; flex-direction: column; align-items: center; gap: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3); max-width: 90%; width: 300px;
+            transform: scale(0.8); transition: 0.3s;
+        }
+        .modal-overlay.show .modal-card { transform: scale(1); }
+        .modal-card img { width: 180px; height: 180px; border-radius: 12px; border: 1px solid #eee; }
+        .modal-card b { color: var(--primary); text-align: center; font-size: 16px; }
 
         .toast { 
             position: fixed; bottom: 30px; left: 50%; 
@@ -161,11 +179,20 @@
 <div class="bg-animate"></div>
 <div id="toast" class="toast"></div>
 
+<!-- QR Code Modal -->
+<div class="modal-overlay" id="qrModal">
+    <div class="modal-card">
+        <b id="qrTitle">QR Code</b>
+        <img id="qrImg" src="" alt="QR Code">
+        <button id="closeQrBtn" style="background: var(--primary); color: white; width: 100%;">ปิดหน้าต่าง</button>
+    </div>
+</div>
+
 <div class="container">
     <h2>Varp Lnk</h2>
     <div class="input-group">
-        <input type="text" id="name" placeholder="ชื่อรายการ">
-        <input type="text" id="url" placeholder="URL https://...">
+        <input type="text" id="url" placeholder="URL https://... (กรอกอันนี้ก่อน)">
+        <input type="text" id="name" placeholder="ชื่อรายการ (ดึงให้อัตโนมัติ)">
         <input type="text" id="tagInput" placeholder="หมวดหมู่...">
         <input type="text" id="customImgInput" placeholder="🖼️ ลิงก์รูปภาพ (เว้นได้)">
     </div>
@@ -222,6 +249,38 @@
         t.classList.add('show');
         setTimeout(() => t.classList.remove('show'), 2000);
     };
+
+    // Auto Fetch Title
+    let fetchTimer;
+    document.getElementById('url').addEventListener('input', (e) => {
+        let rawUrl = e.target.value.trim();
+        if (!rawUrl) return;
+
+        if (!/^https?:\/\//i.test(rawUrl)) rawUrl = 'https://' + rawUrl;
+
+        clearTimeout(fetchTimer);
+        fetchTimer = setTimeout(async () => {
+            const nameInput = document.getElementById('name');
+            if (nameInput.value.trim() !== "") return; // ถ้าพิมพ์ไว้แล้ว ไม่ต้องทับ
+
+            nameInput.placeholder = "⏳ กำลังดึงชื่อเว็บ...";
+            try {
+                const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(rawUrl)}`);
+                const data = await res.json();
+                if (data.contents) {
+                    const match = data.contents.match(/<title[^>]*>([^<]+)<\/title>/i);
+                    if (match && match[1]) {
+                        nameInput.value = match[1].trim();
+                        showToast("✨ ดึงชื่อรายการสำเร็จ!");
+                    }
+                }
+            } catch (err) {
+                console.log("Fetch title failed", err);
+            } finally {
+                nameInput.placeholder = "ชื่อรายการ (ดึงให้อัตโนมัติ)";
+            }
+        }, 600);
+    });
 
     // ---------- Platform & Social profile detection ----------
     function detectPlatform(rawUrl) {
@@ -484,7 +543,7 @@
 
             const platformEl = document.createElement('span');
             platformEl.className = 'platform-label';
-            platformEl.textContent = (PLATFORM_ICONS[item.platform] || item.platform).replace(/^[^\s]+\s/, ''); // เอาแค่ชื่อแอป
+            platformEl.textContent = (PLATFORM_ICONS[item.platform] || item.platform).replace(/^[^\s]+\s/, '');
 
             badgesWrap.appendChild(tagEl);
             badgesWrap.appendChild(platformEl);
@@ -505,6 +564,11 @@
             copyBtn.textContent = 'คัดลอก';
             copyBtn.addEventListener('click', () => copyLink(item.url));
 
+            const qrBtn = document.createElement('button');
+            qrBtn.className = 'qr-btn';
+            qrBtn.textContent = 'QR';
+            qrBtn.addEventListener('click', () => showQrModal(item.name, item.url));
+
             const delBtn = document.createElement('button');
             delBtn.className = 'del-btn';
             delBtn.textContent = 'ลบ';
@@ -516,6 +580,7 @@
             openBtn.addEventListener('click', () => openAndTrack(item.id, item.url));
 
             actions.appendChild(copyBtn);
+            actions.appendChild(qrBtn);
             actions.appendChild(delBtn);
             actions.appendChild(openBtn);
             card.appendChild(actions);
@@ -523,6 +588,21 @@
             listDiv.appendChild(card);
         });
     }
+
+    // QR Modal logic
+    function showQrModal(name, url) {
+        const modal = document.getElementById('qrModal');
+        const qrTitle = document.getElementById('qrTitle');
+        const qrImg = document.getElementById('qrImg');
+
+        qrTitle.textContent = name;
+        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
+        modal.classList.add('show');
+    }
+
+    document.getElementById('closeQrBtn').onclick = () => {
+        document.getElementById('qrModal').classList.remove('show');
+    };
 
     async function openAndTrack(id, url) {
         window.open(url, '_blank');
