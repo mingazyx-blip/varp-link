@@ -41,6 +41,13 @@
             width: 98%; max-width: 1100px; margin-bottom: 10px;
             border: 1px solid rgba(255, 255, 255, 0.3);
             display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center;
+            transition: 0.3s;
+        }
+
+        /* Highlight เมื่ออยู่ในโหมดแก้ไข */
+        .container.edit-mode {
+            border: 2px solid #f59e0b;
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
         }
 
         h2 { font-size: 1.1rem; margin: 0; color: var(--primary); white-space: nowrap; }
@@ -58,11 +65,11 @@
         .btn-group { display: flex; gap: 5px; flex-shrink: 0; }
         button { padding: 10px 18px; border-radius: 12px; font-weight: 600; border: none; cursor: pointer; transition: 0.2s; font-family: 'Kanit'; font-size: 13px; }
         #addBtn { background: var(--primary); color: white; }
+        #addBtn.edit-btn-active { background: #f59e0b; color: white; }
         #clearInputBtn { background: #e2e8f0; color: #475569; }
 
         #searchBox { flex: 1.5; min-width: 150px; background: rgba(255, 255, 255, 0.5); border: 1px dashed rgba(0,0,0,0.2); }
 
-        /* Bars Style */
         .filter-section {
             width: 100%; max-width: 1100px; display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px;
         }
@@ -137,14 +144,15 @@
             font-weight: 600; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
         }
 
-        .action-btns { display: flex; gap: 6px; margin-top: 15px; }
+        .action-btns { display: flex; gap: 4px; margin-top: 15px; }
         .action-btns button { padding: 8px 4px; flex: 1; font-size: 11px; border-radius: 10px; }
         .copy-btn { background: #f0f9ff; color: #0369a1; }
-        .qr-btn { background: #fef3c7; color: #d97706; }
+        .edit-btn { background: #fef3c7; color: #d97706; }
+        .qr-btn { background: #f3e8ff; color: #7c3aed; }
         .del-btn { background: #fff1f2; color: #be123c; }
         .open-btn { background: #1e293b; color: white; }
 
-        /* QR Modal */
+        /* Modal Overlay */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
@@ -179,7 +187,7 @@
 <div class="bg-animate"></div>
 <div id="toast" class="toast"></div>
 
-<!-- QR Code Modal -->
+<!-- QR Modal -->
 <div class="modal-overlay" id="qrModal">
     <div class="modal-card">
         <b id="qrTitle">QR Code</b>
@@ -188,8 +196,8 @@
     </div>
 </div>
 
-<div class="container">
-    <h2>Varp Lnk</h2>
+<div class="container" id="mainContainer">
+    <h2 id="formHeader">Varp Lnk</h2>
     <div class="input-group">
         <input type="text" id="url" placeholder="URL https://... (กรอกอันนี้ก่อน)">
         <input type="text" id="name" placeholder="ชื่อรายการ (ดึงให้อัตโนมัติ)">
@@ -232,6 +240,7 @@
     let searchTerm = "";
     let activeTag = "ทั้งหมด";
     let activePlatform = "ทั้งหมด";
+    let editingId = null; // ตัวแปรเก็บ ID ที่กำลังแก้ไข
 
     const PLATFORM_ICONS = {
         'tiktok': '🎵 TikTok',
@@ -254,14 +263,14 @@
     let fetchTimer;
     document.getElementById('url').addEventListener('input', (e) => {
         let rawUrl = e.target.value.trim();
-        if (!rawUrl) return;
+        if (!rawUrl || editingId) return; // ถ้าอยู่ในโหมดแก้ไข ไม่ต้องดึงใหม่อัตโนมัติ
 
         if (!/^https?:\/\//i.test(rawUrl)) rawUrl = 'https://' + rawUrl;
 
         clearTimeout(fetchTimer);
         fetchTimer = setTimeout(async () => {
             const nameInput = document.getElementById('name');
-            if (nameInput.value.trim() !== "") return; // ถ้าพิมพ์ไว้แล้ว ไม่ต้องทับ
+            if (nameInput.value.trim() !== "") return;
 
             nameInput.placeholder = "⏳ กำลังดึงชื่อเว็บ...";
             try {
@@ -282,7 +291,7 @@
         }, 600);
     });
 
-    // ---------- Platform & Social profile detection ----------
+    // Detect Platform & Social Profile
     function detectPlatform(rawUrl) {
         let u;
         try { u = new URL(rawUrl); } catch (e) { return 'other'; }
@@ -397,6 +406,7 @@
 
     // --------------------------------------------------------
 
+    // ปุ่ม บันทึก / อัปเดต
     document.getElementById('addBtn').onclick = async () => {
         const name = document.getElementById('name').value.trim();
         let url = document.getElementById('url').value.trim();
@@ -408,24 +418,38 @@
         if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
 
         try {
-            await addDoc(collection(db, "links"), { name, url, tag, iconUrl, clicks: 0 });
-            document.getElementById('name').value = '';
-            document.getElementById('url').value = '';
-            document.getElementById('tagInput').value = '';
-            document.getElementById('customImgInput').value = '';
-            showToast("บันทึกแล้ว ✨");
+            if (editingId) {
+                // อัปเดตข้อมูลเดิม
+                await updateDoc(doc(db, "links", editingId), { name, url, tag, iconUrl });
+                showToast("อัปเดตเรียบร้อย ✏️");
+                resetForm();
+            } else {
+                // บันทึกรายการใหม่
+                await addDoc(collection(db, "links"), { name, url, tag, iconUrl, clicks: 0 });
+                resetForm();
+                showToast("บันทึกแล้ว ✨");
+            }
         } catch (e) {
             console.error(e);
             showToast("❌ บันทึกไม่สำเร็จ");
         }
     };
 
-    document.getElementById('clearInputBtn').onclick = () => {
+    function resetForm() {
+        editingId = null;
         document.getElementById('name').value = '';
         document.getElementById('url').value = '';
         document.getElementById('tagInput').value = '';
         document.getElementById('customImgInput').value = '';
-    };
+        
+        const addBtn = document.getElementById('addBtn');
+        addBtn.textContent = "บันทึก";
+        addBtn.classList.remove('edit-btn-active');
+        document.getElementById('mainContainer').classList.remove('edit-mode');
+        document.getElementById('formHeader').textContent = "Varp Lnk";
+    }
+
+    document.getElementById('clearInputBtn').onclick = resetForm;
 
     document.getElementById('searchBox').oninput = (e) => {
         searchTerm = e.target.value.toLowerCase();
@@ -507,13 +531,11 @@
             const displayTag = (!item.tag || item.tag === "undefined") ? "ทั่วไป" : item.tag;
             const clickCount = item.clicks || 0;
 
-            // click badge
             const clickBadge = document.createElement('div');
             clickBadge.className = 'click-badge';
             clickBadge.textContent = `🖱️ ${clickCount}`;
             card.appendChild(clickBadge);
 
-            // header row
             const header = document.createElement('div');
             header.style.cssText = 'display:flex; align-items:center; gap:12px;';
 
@@ -564,6 +586,11 @@
             copyBtn.textContent = 'คัดลอก';
             copyBtn.addEventListener('click', () => copyLink(item.url));
 
+            const editBtn = document.createElement('button');
+            editBtn.className = 'edit-btn';
+            editBtn.textContent = 'แก้ไข';
+            editBtn.addEventListener('click', () => editLink(item));
+
             const qrBtn = document.createElement('button');
             qrBtn.className = 'qr-btn';
             qrBtn.textContent = 'QR';
@@ -580,6 +607,7 @@
             openBtn.addEventListener('click', () => openAndTrack(item.id, item.url));
 
             actions.appendChild(copyBtn);
+            actions.appendChild(editBtn);
             actions.appendChild(qrBtn);
             actions.appendChild(delBtn);
             actions.appendChild(openBtn);
@@ -589,14 +617,28 @@
         });
     }
 
-    // QR Modal logic
+    // ฟังก์ชันเข้าสู่โหมดแก้ไข
+    function editLink(item) {
+        editingId = item.id;
+        document.getElementById('name').value = item.name || '';
+        document.getElementById('url').value = item.url || '';
+        document.getElementById('tagInput').value = item.tag || '';
+        document.getElementById('customImgInput').value = item.iconUrl || '';
+
+        const addBtn = document.getElementById('addBtn');
+        addBtn.textContent = "อัปเดต";
+        addBtn.classList.add('edit-btn-active');
+        document.getElementById('mainContainer').classList.add('edit-mode');
+        document.getElementById('formHeader').textContent = "✏️ แก้ไขรายการ";
+
+        // เลื่อนหน้าจอขึ้นไปด้านบนเพื่อให้แก้ไขสะดวก
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
     function showQrModal(name, url) {
         const modal = document.getElementById('qrModal');
-        const qrTitle = document.getElementById('qrTitle');
-        const qrImg = document.getElementById('qrImg');
-
-        qrTitle.textContent = name;
-        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
+        document.getElementById('qrTitle').textContent = name;
+        document.getElementById('qrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
         modal.classList.add('show');
     }
 
@@ -622,6 +664,7 @@
         if (!confirm("ลบรายการนี้?")) return;
         try {
             await deleteDoc(doc(db, "links", id));
+            if (editingId === id) resetForm();
         } catch (e) {
             console.error(e);
             showToast("❌ ลบไม่สำเร็จ");
